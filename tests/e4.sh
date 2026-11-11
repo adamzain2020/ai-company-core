@@ -13,6 +13,7 @@ bad(){ echo "FAIL $1"; F=$((F+1)); }
 NA=e4-net-a; NB=e4-net-b; DA=e4-db-a; DB=e4-db-b
 cleanup(){
   docker rm -f -v "$DA" "$DB" >/dev/null 2>&1
+  docker volume rm e4-vol-a e4-vol-b >/dev/null 2>&1
   docker network rm "$NA" "$NB" >/dev/null 2>&1
 }
 trap cleanup EXIT
@@ -25,7 +26,7 @@ for x in a b; do
   N=e4-net-$x; D=e4-db-$x; if [ $x = a ]; then PW=$PW_A; else PW=$PW_B; fi
   docker run -d --name "$D" --network "$N" --network-alias db \
     --cap-drop=ALL --cap-add=SETUID --cap-add=SETGID --cap-add=CHOWN --cap-add=DAC_OVERRIDE \
-    --security-opt no-new-privileges --memory 512m --pids-limit 200 \
+    --security-opt no-new-privileges --memory 512m --pids-limit 200 -v e4-vol-$x:/var/lib/mysql \
     -e MARIADB_ROOT_PASSWORD="$PW" -e MARIADB_DATABASE=app mariadb:11 >/dev/null || { echo "db start failed ($x)"; exit 1; }
 done
 
@@ -65,7 +66,7 @@ R=$(ss -ltn 2>/dev/null | grep -E ':3306\b' || true)
 echo "== cleanup removes databases and their data"
 cleanup
 LEFT=$(docker ps -a --format '{{.Names}}' | grep '^e4-' || true)
-VOLS=$(docker volume ls -q | wc -l)
+VOLS=$(docker volume ls -q | grep -c "^e4-vol" || true)
 [ -z "$LEFT" ] && ok "E4e no leftover database containers" || bad "E4e leftovers: $LEFT"
 [ "$VOLS" = 0 ] && ok "E4f no leftover data volumes" || bad "E4f $VOLS volume(s) left behind"
 
