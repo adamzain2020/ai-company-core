@@ -17,7 +17,7 @@ import subprocess
 import sys
 
 ADMIN_FILE = "/etc/ai-company/admin.token"
-GW_SOCK = "/run/ai-gateway/gw.sock"
+GW_SOCK = "/srv/ai-gateway/gw.sock"
 PROJECTS_FILE = "/etc/ai-company/projects.json"
 PROJECTS_ROOT = "/srv/projects"
 LOG_DIR = os.path.expanduser("~/logs")

@@ -40,7 +40,7 @@ PROXY_PATHS = ("/v1/messages", "/v1/messages/count_tokens")
 def load_conf():
     e = os.environ.get
     return dict(
-        socket=e("GW_SOCKET", "/run/ai-gateway/gw.sock"),
+        socket=e("GW_SOCKET", "/srv/ai-gateway/gw.sock"),
         db=e("GW_DB", "/var/lib/ai-gateway/ledger.db"),
         key_file=e("GW_KEY_FILE", "/etc/ai-company/anthropic.key"),
         admin_file=e("GW_ADMIN_FILE", "/etc/ai-company/admin.token"),

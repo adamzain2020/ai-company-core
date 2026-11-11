@@ -13,7 +13,7 @@ echo "== build task image"
 docker build -q -t ai-task:latest /opt/ai-company/image || { echo "image build failed"; exit 1; }
 
 echo "== gateway health (via socket, as the worker user)"
-curl -s --unix-socket /run/ai-gateway/gw.sock http://localhost/health | grep -q '"ok": true' && ok "gateway healthy" || bad "gateway health"
+curl -s --unix-socket /srv/ai-gateway/gw.sock http://localhost/health | grep -q '"ok": true' && ok "gateway healthy" || bad "gateway health"
 
 echo "== run the probe inside a hardened task container"
 OUT=$($W run --project alpha --task p0a --cap 0.5 --debug --cmd "python /opt/task/probe.py" --emit-token /tmp/p0a.tok 2>&1)
@@ -28,7 +28,7 @@ echo "== E8: env file removed after the task"
 ls "$XDG_RUNTIME_DIR/tasks/" 2>/dev/null | grep -q p0a.env && bad "E8 env file left behind" || ok "E8 env file removed"
 
 echo "== E5: token of a finished task is revoked"
-CODE=$(curl -s -o /dev/null -w '%{http_code}' --unix-socket /run/ai-gateway/gw.sock \
+CODE=$(curl -s -o /dev/null -w '%{http_code}' --unix-socket /srv/ai-gateway/gw.sock \
   -H "Authorization: Bearer $(cat /tmp/p0a.tok)" -H 'content-type: application/json' \
   -d '{"model":"claude-haiku-5-5","max_tokens":5,"messages":[{"role":"user","content":"hi"}]}' http://localhost/v1/messages)
 [ "$CODE" = "401" ] && ok "E5 revoked token -> 401" || bad "E5 revoked token returned $CODE"

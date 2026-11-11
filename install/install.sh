@@ -9,6 +9,8 @@ REPO="$(cd "$(dirname "$0")/.." && pwd)"
 id aigateway >/dev/null 2>&1 || adduser --system --group --no-create-home --shell /usr/sbin/nologin aigateway
 
 install -d -m 755 /etc/ai-company /opt/ai-company
+# Socket lives in /srv (NOT /run or /etc): rootless Docker copies those at start and would not see it.
+install -d -o aigateway -g aiworker -m 750 /srv/ai-gateway
 if [ ! -f /etc/ai-company/admin.token ]; then
   (umask 077; openssl rand -hex 32 > /etc/ai-company/admin.token)
 fi
@@ -35,10 +37,9 @@ After=network-online.target
 User=aigateway
 Group=aiworker
 ExecStart=/usr/bin/python3 /opt/ai-company/gateway/gateway.py
-RuntimeDirectory=ai-gateway
-RuntimeDirectoryMode=0750
 StateDirectory=ai-gateway
 StateDirectoryMode=0700
+Environment=GW_SOCKET=/srv/ai-gateway/gw.sock
 Environment=GW_MAX_TASK_CAP=2.0
 Environment=GW_DAILY_CAP=5.0
 Restart=on-failure
@@ -46,6 +47,7 @@ NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=yes
 PrivateTmp=yes
+ReadWritePaths=/srv/ai-gateway
 ProtectKernelTunables=yes
 ProtectControlGroups=yes
 
