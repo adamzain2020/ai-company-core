@@ -238,12 +238,12 @@ def make_server(conf):
                 req = json.loads(raw or b"{}")
             except ValueError:
                 return self.err(400, "invalid_request", "invalid JSON")
-            if not key:
-                return self.err(503, "gateway_unconfigured", "API key not installed yet")
             model = req.get("model")
             fam = family(model)
             if not fam:
                 return self.err(403, "forbidden", "model not allowed")
+            if not key:
+                return self.err(503, "gateway_unconfigured", "API key not installed yet")
             if path == "/v1/messages":
                 worst = worst_case_usd(fam, len(raw), req.get("max_tokens", 0))
                 fresh = ledger.get(tok)
