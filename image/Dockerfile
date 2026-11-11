@@ -1,0 +1,5 @@
+FROM python:3.12-slim
+RUN pip install --no-cache-dir claude-agent-sdk
+COPY agent_task.py probe.py /opt/task/
+WORKDIR /work
+CMD ["python", "/opt/task/agent_task.py"]
