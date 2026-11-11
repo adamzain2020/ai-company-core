@@ -259,7 +259,7 @@ def make_server(conf):
             try:
                 cls = http.client.HTTPSConnection if up.scheme == "https" else http.client.HTTPConnection
                 c = cls(up.hostname, up.port or (443 if up.scheme == "https" else 80), timeout=600)
-                c.request("POST", path, raw, hdr)
+                c.request("POST", self.path, raw, hdr)  # keep the query string, e.g. ?beta=true
                 r = c.getresponse()
             except Exception:
                 return self.err(502, "upstream_error", "upstream unreachable")
