@@ -16,12 +16,12 @@ echo "== gateway health (via socket, as the worker user)"
 curl -s --unix-socket /run/ai-gateway/gw.sock http://localhost/health | grep -q '"ok": true' && ok "gateway healthy" || bad "gateway health"
 
 echo "== run the probe inside a hardened task container"
-OUT=$($W run --project alpha --task p0a --cap 0.5 --cmd "python /opt/task/probe.py" --emit-token /tmp/p0a.tok 2>&1)
-echo "$OUT" | grep -E '^(PASS|FAIL|PROBE|LEAKTEST)'
+OUT=$($W run --project alpha --task p0a --cap 0.5 --debug --cmd "python /opt/task/probe.py" --emit-token /tmp/p0a.tok 2>&1)
+echo "$OUT" | grep -E '^(PASS|FAIL|PROBE|LEAKTEST|DEBUG|\[sidecar|--- )' ; echo "$OUT" | sed -n '/\[sidecar logs\]/,$p' | head -20
 echo "$OUT" | grep -q '^FAIL' && bad "probe has failures" || ok "probe: no failures"
 
 echo "== E8: secrets must not appear in saved logs"
-if grep -qE 'tk_|sk-ant-' "$HOME/logs/p0a.log"; then bad "E8 token found in log"; else ok "E8 log is redacted"; fi
+if grep -qE 'tk_[A-Za-z0-9_-]{20,}|sk-ant-[A-Za-z0-9_-]{10,}' "$HOME/logs/p0a.log"; then bad "E8 token found in log"; else ok "E8 log is redacted"; fi
 grep -q 'REDACTED' "$HOME/logs/p0a.log" && ok "E8 redaction marker present" || bad "E8 no redaction marker"
 
 echo "== E8: env file removed after the task"

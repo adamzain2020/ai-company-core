@@ -125,6 +125,9 @@ def run_task(a):
         except subprocess.TimeoutExpired as e:
             docker("kill", cname, check=False)
             out, exit_code = ((e.stdout or b"").decode() if isinstance(e.stdout, bytes) else (e.stdout or "")) + "\n[TIMEOUT]", 124
+        if a.debug:
+            out += "\n[sidecar state] " + (docker("inspect", "-f", "{{.State.Status}} exit={{.State.ExitCode}}", sidecar, check=False).stdout or "")
+            out += "[sidecar logs]\n" + (docker("logs", sidecar, check=False).stdout or "")
         text = redact(out, [tok])
         logpath = os.path.join(LOG_DIR, a.task + ".log")
         fd = os.open(logpath, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
@@ -161,6 +164,7 @@ def main():
     r.add_argument("--image", default="ai-task:latest")
     r.add_argument("--prompt", default="")
     r.add_argument("--cmd", default="", help="shell command instead of the default agent run")
+    r.add_argument("--debug", action="store_true", help="append sidecar state and logs to the output")
     r.add_argument("--emit-token", default="", help="tests only: write the task token to this file")
     a = ap.parse_args()
     sys.exit(run_task(a))

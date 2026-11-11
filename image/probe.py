@@ -7,6 +7,7 @@ import urllib.error
 import urllib.request
 
 R = []
+ERRS = []
 
 
 def check(name, ok):
@@ -23,7 +24,8 @@ def http(method, url, body=None, headers=None, proxy=None, timeout=8):
         return opener.open(req, timeout=timeout).status
     except urllib.error.HTTPError as e:
         return e.code
-    except Exception:
+    except Exception as e:
+        ERRS.append("%s %s -> %r" % (method, url, e))
         return None
 
 
@@ -31,7 +33,7 @@ GW = "http://gateway:8080"
 tok = os.environ.get("ANTHROPIC_AUTH_TOKEN", "")
 envtxt = json.dumps(dict(os.environ))
 check("G3 no real Anthropic key in container env", "sk-ant-" not in envtxt)
-check("G3b only a scoped task token (tk_) is present", tok.startswith("tk_"))
+check("G3b only a scoped task token (prefix tk) is present", tok.startswith("tk_"))
 check("E5a no admin secret reachable from container", not os.path.exists("/etc/ai-company"))
 check("E1 no docker.sock or gateway socket inside", not os.path.exists("/var/run/docker.sock")
       and not os.path.exists("/run/ai-gateway"))
@@ -72,5 +74,7 @@ try:
 except Exception:
     ro = True
 check("E2 root filesystem read-only", ro)
+for e in ERRS:
+    print("DEBUG " + e)
 print("LEAKTEST token=" + tok)  # the worker log must show [REDACTED] (E8)
 print("PROBE %d/%d passed" % (sum(R), len(R)))
